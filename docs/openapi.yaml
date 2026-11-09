@@ -1,0 +1,145 @@
+openapi: 3.0.3
+info:
+  title: Wayfinder Carrier Discovery API
+  version: 1.0.0
+  description: Fictional demo carrier discovery. Scores and rates are illustrative, not booking guarantees.
+servers:
+  - url: http://localhost:5080
+paths:
+  /api/reference:
+    get:
+      summary: Demo reference values
+      responses:
+        '200':
+          description: Supported cities, equipment, and demo notice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cities: { type: array, items: { type: string } }
+                  equipment: { type: array, items: { type: string } }
+                  dataNotice: { type: string }
+  /api/carriers:
+    get:
+      summary: Search carriers with optional eligibility filters
+      parameters:
+        - { name: origin, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: destination, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: equipment, in: query, schema: { type: string, enum: [dryVan, refrigerated, flatbed] } }
+        - { name: pickupDate, in: query, schema: { type: string, format: date } }
+        - { name: weightLb, in: query, schema: { type: integer, minimum: 1, maximum: 100000, default: 1 } }
+        - { name: maxRatePerMile, in: query, schema: { type: number, exclusiveMinimum: true, minimum: 0, maximum: 100 } }
+        - { name: query, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 10000, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 6 } }
+        - { name: sort, in: query, schema: { type: string, enum: [recommended, rate, name], default: recommended } }
+      responses:
+        '200': { $ref: '#/components/responses/Carriers' }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '429': { $ref: '#/components/responses/Throttled' }
+  /api/recommendations:
+    post:
+      summary: Recommend eligible carriers for a shipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Shipment' }
+      responses:
+        '200': { $ref: '#/components/responses/Carriers' }
+        '400': { $ref: '#/components/responses/Invalid' }
+        '429': { $ref: '#/components/responses/Throttled' }
+  /api/carriers/{id}:
+    get:
+      summary: Get a carrier by ID
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Current carrier details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Carrier' }
+        '404': { description: Carrier not found }
+        '429': { $ref: '#/components/responses/Throttled' }
+  /health/live:
+    get:
+      summary: Process liveness
+      responses:
+        '200': { description: Process is running }
+  /health/ready:
+    get:
+      summary: Database connectivity
+      responses:
+        '200': { description: Database can be reached }
+        '503': { description: Database is unavailable }
+components:
+  responses:
+    Carriers:
+      description: Eligible carriers; all candidates are ordered before pagination
+      headers:
+        Server-Timing: { schema: { type: string }, description: API processing duration in milliseconds }
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [items, totalCount, page, pageSize, totalPages, rankingVersion]
+            properties:
+              items: { type: array, items: { $ref: '#/components/schemas/Carrier' } }
+              totalCount: { type: integer }
+              page: { type: integer }
+              pageSize: { type: integer }
+              totalPages: { type: integer }
+              rankingVersion: { type: string, enum: [quality-v1, unranked] }
+    Invalid:
+      description: Malformed input or business validation failure
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type: { type: string }
+              title: { type: string }
+              status: { type: integer }
+              errors: { type: object, additionalProperties: { type: array, items: { type: string } } }
+    Throttled:
+      description: Per-IP discovery limit exceeded (120/minute)
+      headers:
+        Retry-After: { schema: { type: integer }, description: Seconds until retry is allowed }
+  schemas:
+    Shipment:
+      type: object
+      required: [origin, destination, equipment, pickupDate]
+      properties:
+        origin: { type: string, maxLength: 80 }
+        destination: { type: string, maxLength: 80 }
+        equipment: { type: string, enum: [dryVan, refrigerated, flatbed] }
+        pickupDate: { type: string, format: date, description: UTC date, today through 365 days ahead }
+        weightLb: { type: integer, minimum: 1, maximum: 100000, default: 1 }
+        maxRatePerMile: { type: number, nullable: true, minimum: 0, exclusiveMinimum: true, maximum: 100 }
+        query: { type: string, nullable: true, maxLength: 100 }
+        sort: { type: string, enum: [recommended, rate, name], default: recommended }
+        page: { type: integer, minimum: 1, maximum: 10000, default: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 50, default: 6 }
+    Carrier:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        dotNumber: { type: string, description: Fictional demo identifier }
+        equipment: { type: string, enum: [dryVan, refrigerated, flatbed] }
+        capacityLb: { type: integer }
+        ratePerMile: { type: number, description: Illustrative USD per mile }
+        onTimeRate: { type: number, minimum: 0, maximum: 1 }
+        safetyScore: { type: number, minimum: 0, maximum: 100 }
+        completedLoads: { type: integer, minimum: 0 }
+        availableFrom: { type: string, format: date }
+        availableThrough: { type: string, format: date }
+        score:
+          type: object
+          properties:
+            reliability: { type: number, minimum: 0, maximum: 50 }
+            safety: { type: number, minimum: 0, maximum: 30 }
+            experience: { type: number, minimum: 0, maximum: 20 }
+            total: { type: number, minimum: 0, maximum: 100 }
