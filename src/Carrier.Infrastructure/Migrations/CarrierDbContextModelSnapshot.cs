@@ -9,7 +9,7 @@ public sealed class CarrierDbContextModelSnapshot : ModelSnapshot
 {
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasAnnotation("ProductVersion", "10.0.0").HasAnnotation("Relational:MaxIdentifierLength", 128);
+        modelBuilder.HasAnnotation("ProductVersion", "10.0.14").HasAnnotation("Relational:MaxIdentifierLength", 128);
         SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
         modelBuilder.Entity("Carrier.Domain.CarrierProfile", b =>
         {

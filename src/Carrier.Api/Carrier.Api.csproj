@@ -2,6 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="../Carrier.Application/Carrier.Application.csproj" />
     <ProjectReference Include="../Carrier.Infrastructure/Carrier.Infrastructure.csproj" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" PrivateAssets="all" />
   </ItemGroup>
 </Project>
