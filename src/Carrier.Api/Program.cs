@@ -103,6 +103,15 @@ internal sealed class ApiExceptionHandler(IProblemDetailsService problems, ILogg
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken ct)
     {
+        if (exception is BadHttpRequestException malformed)
+        {
+            context.Response.StatusCode = malformed.StatusCode;
+            return await problems.TryWriteAsync(new ProblemDetailsContext
+            {
+                HttpContext = context,
+                ProblemDetails = new() { Status = malformed.StatusCode, Title = "The request body or parameters are malformed." }
+            });
+        }
         if (exception is SearchValidationException validation)
         {
             context.Response.StatusCode = 400;

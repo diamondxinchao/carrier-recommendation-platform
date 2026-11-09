@@ -17,7 +17,7 @@ The Domain, Application, and core-check projects compiled with .NET SDK 10.0.402
 
 All 10 TypeScript/TSX files passed a Babel syntax parse using the bundled tooling. JSON and project XML parsed successfully, the benchmark script passed Python syntax compilation, and the staged changes passed Git's whitespace check. Syntax parsing does not replace TypeScript type checking, React execution, or browser validation.
 
-At the time of this record, package downloads were blocked by session network restrictions. The EF/API xUnit tests, React build/Vitest, browser tests, SQL Server container and migration could therefore **not be executed locally**. These are supplied checks, not claimed passing checks. GitHub Actions defines the full verification path; its actual result must be checked after publishing. No local performance or accuracy number is claimed.
+Package downloads on the implementation machine are blocked by session network restrictions, so full verification runs on GitHub-hosted runners. Check the [latest Quality checks results](https://github.com/diamondxinchao/carrier-recommendation-platform/actions/workflows/ci.yml) for the backend build and HTTP/SQLite tests, SQL Server migration/query test, frontend build/Vitest, and desktop/mobile Playwright tests. No local performance or accuracy number is claimed.
 
 To run only the dependency-free checks without contacting package services, use an empty local NuGet feed for restore:
 
